@@ -1,0 +1,89 @@
+#!/bin/bash
+
+JSON_FILE ="users.json"
+
+if [ ! -f $JSON_FILE ]; then echo '{"users": []}' > $JSON_FILE
+fi
+create_user() {
+     read -p "Enter username: "  username
+     read -p "Enter user ID: " userid
+
+
+if jq -e ".users[] | select(.username == \"$username\")" $JSON_FILE > / dev/null; then
+       echo "User $username already exists."
+    else
+        jq --arg username "$username" --arg userid 
+        "$userid" \
+                 '.users += [{"username": $username,"userid": $userid}]' $json_FILE > tmp.$$.json && mv tmp.$$.json $JSON_FILE
+       echo "User $username with ID $userid created successfully."
+fi
+read -p "Press [Enter] key to continue..."
+}
+
+delete_user() {
+      read -p "Enter username: " username
+      if jq -e ".users[] | select(username == \"$username\")" $JSON_FILE > / dev/null; then
+         jq "del(.users[]  |  select(.username == \"$username\"))" $JSON_FILE > tmp.$$.json && mv tmp.$$.json $JSON_FILE
+         echo "User $username deleted successfully ."
+      else
+         echo "User $usernamename does not exists."
+      fi
+         read -p "Press [Enter] key to continue..."
+}
+edit_user() {
+     read -p "Enter username: " username
+     if jq -e ".users[]  |  select(.username == \"$username\")" $JSON_FILE >/ dev/null; then
+            echo "1.Change username"
+            echo  "2.Change user ID"
+            read -p "Enter your choice: " choice
+            case $choice in 
+                 1) 
+                    read -p "Enter new username: "  new_username jq --arg username "$username" --arg  new_username"\ '(.users[] | select(.username == $username) | .username)  = $new_username'
+$JSON_FILE   >  tmp.$$.json && mv tmp.$$ .json $JSON_FILE
+            echo "Username changed to $new_username."
+                                             ;;
+                2)
+                 read -p "Enter new user ID: " new_userid  jq --arg username "$username"  --arg new_userid "$new_userid" \ '(.users[]  | select(.username  ==  $username) | .userid)  =  $new_userid'
+$JSON_FILE  > tmp.$$.json && mv tmp.$$.json $JSON_FILE
+                echo "User ID changed to $new_userid."
+                                        ;;
+                *)
+                   echo "Invalid choice." 
+                                           ;;
+           esac
+       else
+          echo "User $username does not exist."
+       fi
+       read -p "Press [Enter} key to continue..."
+}
+list_users()  {
+     echo "Users ID  |  Username" jq -r '.users[]  | "\  (.userid)  | \(.username)"' $JSON_FILE 
+         read -p "Press [Enter ] key to continue.."
+}
+
+while true; do
+     clear
+     echo
+"---------------------------------------------------------------------------------------------------------------------------------------------"
+     echo "User Management System"
+     echo 
+"---------------------------------------------------------------------------------------------------------------------------------------------"
+     echo "1. Add User"
+     echo "2. Edit User"
+     echo "3. Delete User"
+     echo "4. List Users"
+     echo "5. Exit"
+     echo
+"----------------------------------------------------------------------------------------------------------------------------------------------"
+    read -p "Enter your choice: "choice 
+    case $choice in
+         1) add_user ;;
+         2) edit_user ;;
+         3) delete_user ;;
+         4) list_users ;;
+         5) exit ;;
+         *) echo "Invalid choice. Please enter a number between 1 and 5 ."
+            sleep 2
+            ;;
+    esac
+done
